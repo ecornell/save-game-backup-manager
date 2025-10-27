@@ -317,7 +317,7 @@ class BackupManagerApp(App):
                     Static(""),
                     classes="backup-tab"
                 )
-            with TabPane("⚙️ Configuration", id="config_tab"):
+            with TabPane("⚙  Configuration", id="config_tab"):
                 yield Vertical(
                     # Games Configuration Section
                     Static("🎮 Configured Games", classes="section-header"),
@@ -331,7 +331,7 @@ class BackupManagerApp(App):
                     ),
                     
                     # Global Settings Section
-                    Static("⚙️ Global Settings", classes="section-header"),
+                    Static("⚙  Global Settings", classes="section-header"),
                     Horizontal(
                         Label("Default Max Backups:"),
                         Input(
