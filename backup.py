@@ -351,7 +351,13 @@ class SaveBackupManager:
                  post_backup_cmd: Optional[str] = None, retries: int = 3, retry_delay: float = 0.5):
         # Default to current directory if not specified
         self.save_dir = Path(save_dir) if save_dir else Path.cwd()
-        self.backup_dir = Path(backup_dir) if backup_dir else self.save_dir / "backups"
+        # Ensure we use a consistent default backup directory location for both
+        # the CLI and the programmatic API: use the repository/script root
+        # 'backups' folder if the caller doesn't supply one.
+        if backup_dir:
+            self.backup_dir = Path(backup_dir)
+        else:
+            self.backup_dir = Path(__file__).parent / "backups"
         self.max_backups = max_backups
         self.game_name = game_name
         # New options for handling locked files and hooks
@@ -361,8 +367,8 @@ class SaveBackupManager:
         self.retries = retries
         self.retry_delay = retry_delay
         
-        # Create backup directory if it doesn't exist
-        self.backup_dir.mkdir(exist_ok=True)
+        # Create backup directory if it doesn't exist (create any missing parent dirs)
+        self.backup_dir.mkdir(parents=True, exist_ok=True)
 
         # On startup, attempt to recover or clean up any leftover temp dirs
         try:
@@ -1139,6 +1145,20 @@ Examples:
         default_backup_path = config.get("settings", {}).get("default_backup_path")
         if default_backup_path:
             backup_dir = expand_path(default_backup_path)
+
+    # Ensure we standardize to using './backups' (plural) as the default backup
+    # directory next to the script if none was provided.
+    try:
+        script_dir = Path(__file__).parent
+        if not backup_dir:
+            default_backup_dir = script_dir / "backups"
+            # If the default doesn't exist yet, create it (non-fatal)
+            default_backup_dir.mkdir(parents=True, exist_ok=True)
+            backup_dir = str(default_backup_dir)
+            print_info(f"Using default backups directory: {default_backup_dir}")
+    except Exception as e:
+        # Non-fatal, just warn
+        print_warning(f"Failed to ensure default './backups' directory: {e}")
     
     # Validate save directory exists
     if save_dir and not os.path.exists(save_dir):

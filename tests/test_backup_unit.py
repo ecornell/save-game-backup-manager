@@ -99,3 +99,24 @@ def test_create_backup_isolated_exdev_and_move_called(monkeypatch, fake_mkdtemp_
     assert meta_key in writes
     meta = json.loads(writes[meta_key])
     assert meta.get("move_method") == "copied"
+
+
+def test_default_backup_dir_is_repo_backups(monkeypatch):
+    """Ensure SaveBackupManager defaults to the repository/script root 'backups' dir
+    when no backup_dir argument is provided.
+    """
+    recorded = {}
+
+    def record_mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        recorded['path'] = str(self)
+        # simulate no-op behavior
+        return None
+
+    monkeypatch.setattr(backup.Path, "mkdir", record_mkdir)
+
+    # Create manager without providing a backup_dir to trigger default behavior
+    manager = backup.SaveBackupManager("/fake/save_dir", None, max_backups=2)
+
+    expected = Path(backup.__file__).parent / "backups"
+    assert recorded.get('path') == str(expected)
+    assert manager.backup_dir == expected
